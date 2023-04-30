@@ -33,6 +33,10 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
             params.temp = std::stof(argv[++i]);
         } else if (arg == "-b" || arg == "--batch_size") {
             params.n_batch = std::stoi(argv[++i]);
+        } else if (arg == "--repeat_penalty") {
+            params.repetition_penalty = std::stof(argv[++i]);
+        } else if (arg == "--split") {
+            params.split = 1;
         } else if (arg == "-m" || arg == "--model") {
             params.model = argv[++i];
         } else if (arg == "-h" || arg == "--help") {
@@ -61,7 +65,9 @@ void gpt_print_usage(int argc, char ** argv, const gpt_params & params) {
     fprintf(stderr, "  --top_k N             top-k sampling (default: %d)\n", params.top_k);
     fprintf(stderr, "  --top_p N             top-p sampling (default: %.1f)\n", params.top_p);
     fprintf(stderr, "  --temp N              temperature (default: %.1f)\n", params.temp);
+    fprintf(stderr, "  --repeat_penalty N    repetition penalty (default: %.1f)\n", params.repetition_penalty);
     fprintf(stderr, "  -b N, --batch_size N  batch size for prompt processing (default: %d)\n", params.n_batch);
+    fprintf(stderr, "  --split N             split mode\n", params.split);
     fprintf(stderr, "  -m FNAME, --model FNAME\n");
     fprintf(stderr, "                        model path (default: %s)\n", params.model.c_str());
     fprintf(stderr, "\n");
@@ -220,7 +226,7 @@ std::vector<gpt_vocab::id> gpt_tokenize(const gpt_vocab & vocab, const std::stri
         int n = word.size();
         while (i < n) {
             int j = n;
-            while (j > i) {
+            while (j >= i) {
                 auto it = vocab.token_to_id.find(word.substr(i, j-i));
                 if (it != vocab.token_to_id.end()) {
                     tokens.push_back(it->second);
@@ -232,15 +238,15 @@ std::vector<gpt_vocab::id> gpt_tokenize(const gpt_vocab & vocab, const std::stri
             if (i == n) {
                 break;
             }
-            if (j == i) {
-                auto sub = word.substr(i, 1);
-                if (vocab.token_to_id.find(sub) != vocab.token_to_id.end()) {
-                    tokens.push_back(vocab.token_to_id.at(sub));
-                } else {
-                    fprintf(stderr, "%s: unknown token '%s'\n", __func__, sub.data());
-                }
-                ++i;
-            }
+            // if (j == i) {
+            //     auto sub = word.substr(i, 1);
+            //     if (vocab.token_to_id.find(sub) != vocab.token_to_id.end()) {
+            //         tokens.push_back(vocab.token_to_id.at(sub));
+            //     } else {
+            //         fprintf(stderr, "%s: unknown token '%s'\n", __func__, sub.data());
+            //     }
+            //     ++i;
+            // }
         }
     }
 
@@ -272,6 +278,7 @@ gpt_vocab::id gpt_sample_top_k_top_p(
         int    top_k,
         double top_p,
         double temp,
+        double repetition_penalty,
         std::mt19937 & rng) {
     int n_logits = vocab.id_to_token.size();
 
@@ -281,7 +288,14 @@ gpt_vocab::id gpt_sample_top_k_top_p(
     {
         const double scale = 1.0/temp;
         for (int i = 0; i < n_logits; ++i) {
-            logits_id.push_back(std::make_pair(logits[i]*scale, i));
+            // repetition penalty from ctrl paper (https://arxiv.org/abs/1909.05858)
+            // credit https://github.com/facebookresearch/llama/compare/main...shawwn:llama:main
+            // if score < 0 then repetition penalty has to multiplied to reduce the previous token probability
+            if (logits[i] < 0.0f) {
+                logits_id.push_back(std::make_pair(logits[i]*scale*repetition_penalty, i));
+            } else {
+                logits_id.push_back(std::make_pair(logits[i]*scale/repetition_penalty, i));
+            }
         }
     }
 
