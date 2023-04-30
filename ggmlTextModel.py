@@ -23,11 +23,12 @@ class ggmlTextModel:
             self.path,
             "-m",
             self.model_path,
-            "-n 0",
+            "-n",
+            str(0),
             "-p",
-            "\".\""
+            "."
         ]
-        self.process = subprocess.Popen(shlex.split(" ".join(self.command)), stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+        self.process = subprocess.Popen(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         self.model_info = {}
         line_count = 0
         while self.process.stdout.readable():
@@ -58,17 +59,18 @@ class ggmlTextModel:
             return self.tokens
 
         self.prompt = prompt
-        self.prompt = self.prompt.replace("\n", "\\n")
-        self.prompt = self.prompt.replace("\"", "\\\"")
+        # self.prompt = self.prompt.replace("\n", "\\n")
+        # self.prompt = self.prompt.replace("\"", "\\\"")
         self.command = [
             self.path,
             "-m",
             self.model_path,
-            "-n 0",
+            "-n",
+            str(0),
             "-p",
-            f"\"{self.prompt}\""
+            self.prompt
         ]
-        self.process = subprocess.Popen(shlex.split(" ".join(self.command)), stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+        self.process = subprocess.Popen(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         token_count = 0
         self.tokens = []
         while self.process.stdout.readable():
@@ -85,8 +87,8 @@ class ggmlTextModel:
 
     def generate(self, n_predict=100, top_p=1, top_k=50, temperature=0.9, seed=-1, repeat_penalty=1.2, prompt=""):
         self.prompt = prompt
-        self.prompt = self.prompt.replace("\n", "\\n")
-        self.prompt = self.prompt.replace("\"", "\\\"")
+        # self.prompt = self.prompt.replace("\n", "\\n")
+        # self.prompt = self.prompt.replace("\"", "\\\"")
         self.command = [
             self.path,
             "-m",
@@ -109,10 +111,10 @@ class ggmlTextModel:
             str(repeat_penalty),
             "--split",
             "-p",
-            f"\"{self.prompt}\""
+            self.prompt
         ]
         # print(" ".join(self.command))
-        self.process = subprocess.Popen(shlex.split(" ".join(self.command)), stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+        self.process = subprocess.Popen(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         reply = ""
         token_count = 0
         self.tokens = []
