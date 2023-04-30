@@ -2,8 +2,6 @@ import subprocess
 import shlex
 import os
 
-command1 = """./build/bin/stablelm -m ./polyglot-12.8B/ggml-polyglot-ko-12.8B-q4_2.bin -t 16 -n 10 --temp 0.8 -p "시청자 여러분 안녕하십니까. 오늘 아침 순양그룹 진양철 회장이 사망했습니다. 그는 대한민국 경제발전의 기둥이었으며," """
-
 class ggmlTextModel:
     def __init__(self):
         self.model_path = "",
@@ -129,12 +127,12 @@ class ggmlTextModel:
 
 
 
-prompt = """그는"""
+# prompt = """그는"""
 
-model = ggmlTextModel()
-model.setting("./polyglot-12.8B/ggml-polyglot-ko-12.8B-q4_2.bin", 16, 256, "stablelm")
-print(model.info())
-print(model.encode(prompt))
+# model = ggmlTextModel()
+# model.setting("./polyglot-12.8B/ggml-polyglot-ko-12.8B-q4_2.bin", 16, 256, "stablelm")
+# print(model.info())
+# print(model.encode(prompt))
 
-for text in model.generate(100, 1, 50, 0.9, -1, 1.2, prompt):
-    print(text, end="", flush=True)
+# for text in model.generate(100, 1, 50, 0.9, -1, 1.2, prompt):
+#     print(text, end="", flush=True)
