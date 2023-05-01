@@ -123,16 +123,22 @@ class ggmlTextModel:
             if not line:
                 self.quit()
                 break
-            if (len(line) < 13):
-                reply = reply + line[:-1]
+            if (1 < len(line) and len(line) < 13):
+                if (int(line[:-1].split(":")[0]) == 202):
+                    #new line token find
+                    text = "\n"
+                else:
+                    text = line[:-1].split(":")[1]
+                reply = reply + text
                 if (len(reply) > len(self.prompt)):
-                    yield (line[:-1])
+                    yield text
             else:
                 if (token_count > 0 and line.find("token") != -1):
                     token_count = token_count - 1
                     self.tokens.append(int(line.split("=")[1].split(",")[0])) 
                 if (line.find("number of tokens in prompt") != -1):
                     token_count = int(line.split("=")[1])
+        # print(self.tokens)
         return 0
 
     def quit(self):
