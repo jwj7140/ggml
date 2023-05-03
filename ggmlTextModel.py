@@ -72,6 +72,7 @@ class ggmlTextModel:
         ]
         self.process = subprocess.Popen(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         token_count = 0
+        token_num = 0
         self.tokens = []
         while self.process.stdout.readable():
             line = self.process.stdout.readline()
@@ -83,7 +84,8 @@ class ggmlTextModel:
                 self.tokens.append(int(line.split("=")[1].split(",")[0])) 
             if (line.find("number of tokens in prompt") != -1):
                 token_count = int(line.split("=")[1])
-        return self.tokens
+                token_num = int(line.split("=")[1])
+        return range(token_num)
 
     def generate(self, n_predict=100, top_p=1, top_k=50, temperature=0.9, seed=-1, repeat_penalty=1.2, prompt=""):
         self.prompt = prompt
@@ -124,11 +126,11 @@ class ggmlTextModel:
                 self.quit()
                 break
             if (1 < len(line) and len(line) < 13):
-                if (int(line[:-1].split(":")[0]) == 202):
+                if (int(line[:-1].split(":", 1)[0]) == 202):
                     #new line token find
                     text = "\n"
                 else:
-                    text = line[:-1].split(":")[1]
+                    text = line[:-1].split(":", 1)[1]
                 reply = reply + text
                 if (len(reply) > len(self.prompt)):
                     yield text
@@ -139,6 +141,7 @@ class ggmlTextModel:
                 if (line.find("number of tokens in prompt") != -1):
                     token_count = int(line.split("=")[1])
         # print(self.tokens)
+        # print(reply)
         return 0
 
     def quit(self):
